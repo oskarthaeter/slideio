@@ -1,7 +1,7 @@
 // This file is part of slideio project.
 // It is subject to the license terms in the LICENSE file found in the top-level directory
 // of this distribution and at http://slideio.com/license.html.
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include "convertersvstools.hpp"
 #include "convertertools.hpp"
 #include "slideio/core/tools/tools.hpp"
@@ -12,11 +12,10 @@
 #include "slideio/converter/converterparameters.hpp"
 
 using namespace slideio;
+namespace fs = std::filesystem;
 
-
-static void convertToSVS(CVScenePtr scene, ConverterParameters& params, const std::string& outputPath, ConverterCallback cb)
-{
-    if(params.getFormat() != ImageFormat::SVS) {
+static void convertToSVS(CVScenePtr scene, ConverterParameters& params, const std::string& outputPath, ConverterCallback cb) {
+    if (params.getFormat() != ImageFormat::SVS) {
         RAISE_RUNTIME_ERROR << "Incorrect parameter type for the output file";
     }
     try {
@@ -27,48 +26,39 @@ static void convertToSVS(CVScenePtr scene, ConverterParameters& params, const st
             const auto& block = params.getRect();
             int width = rect.width;
             int height = rect.height;
-            if(block.isValid()) {
+            if (block.isValid()) {
                 width = block.width;
                 height = block.height;
             }
             parameters.setNumZoomLevels(ConverterTools::computeNumZoomLevels(width, height));
         }
         ConverterSVSTools::createSVS(file, scene, parameters, cb);
-    }
-    catch(std::exception&) {
-#if defined(WIN32)
-        boost::filesystem::remove(Tools::toWstring(outputPath));
-#else
-        boost::filesystem::remove(outputPath);
-#endif
+    } catch (std::exception&) {
+        fs::remove(outputPath);
         throw;
     }
 }
 
 void slideio::convertScene(ScenePtr scene,
-                            ConverterParameters& parameters,
-                            const std::string& outputPath,
-                            ConverterCallback cb)
-{
-    if(scene == nullptr) {
+                           ConverterParameters& parameters,
+                           const std::string& outputPath,
+                           ConverterCallback cb) {
+    if (scene == nullptr) {
         RAISE_RUNTIME_ERROR << "Converter: invalid input scene!";
     }
     if (parameters.getFormat() != ImageFormat::SVS) {
         RAISE_RUNTIME_ERROR << "Converter: output format '" << (int)parameters.getFormat() << "' is not supported!";
     }
     SVSConverterParameters& svsParameters = (SVSConverterParameters&)parameters;
-    if(svsParameters.getEncoding() != Compression::Jpeg
-        && svsParameters.getEncoding() != Compression::Jpeg2000) {
+    if (svsParameters.getEncoding() != Compression::Jpeg && svsParameters.getEncoding() != Compression::Jpeg2000) {
         RAISE_RUNTIME_ERROR << "Unsupported compression type: " << (int)svsParameters.getEncoding();
     }
-    if(boost::filesystem::exists(outputPath)) {
+    if (fs::exists(outputPath)) {
         RAISE_RUNTIME_ERROR << "Converter: output file already exists.";
     }
     std::string sceneName = scene->getName();
     std::string filePath = scene->getFilePath();
     SLIDEIO_LOG(INFO) << "Convert a scene " << sceneName << " from file "
-            << filePath << " to format: '" << (int)parameters.getFormat() << "'.";
+                      << filePath << " to format: '" << (int)parameters.getFormat() << "'.";
     convertToSVS(scene->getCVScene(), parameters, outputPath, cb);
 }
-
-

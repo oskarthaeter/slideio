@@ -8,7 +8,7 @@
 #include "slideio/imagetools/tifftools.hpp"
 #include "slideio/base/base.hpp"
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <boost/format.hpp>
 
 
@@ -47,7 +47,7 @@ std::shared_ptr<CVScene> SVSSlide::getScene(int index) const
 std::shared_ptr<SVSSlide> SVSSlide::openFile(const std::string& filePath)
 {
     SLIDEIO_LOG(INFO) << "SVSSlide::openFile: " << filePath;
-    namespace fs = boost::filesystem;
+    namespace fs = std::filesystem;
     std::shared_ptr<SVSSlide> slide;
     std::vector<TiffDirectory> directories;
     libtiff::TIFF* tiff(nullptr);

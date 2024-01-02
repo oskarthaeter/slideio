@@ -3,12 +3,12 @@
 // of this distribution and at http://slideio.com/license.html.
 #include "slideio/drivers/dcm/dcmimagedriver.hpp"
 #include "slideio/drivers/dcm/dcmslide.hpp"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include <dcmdata/dcpixel.h>
-#include <dcmdata/dcrledrg.h>    /* for DcmRLEDecoderRegistration */
-#include <dcmjpeg/djdecode.h>    /* for dcmjpeg decoders */
-#include <dcmjpeg/ddpiimpl.h>    /* for class DicomDirImageImplementation */
+#include <dcmdata/dcrledrg.h> /* for DcmRLEDecoderRegistration */
+#include <dcmjpeg/djdecode.h> /* for dcmjpeg decoders */
+#include <dcmjpeg/ddpiimpl.h> /* for class DicomDirImageImplementation */
 #include <dcmtk/dcmjpls/djdecode.h>
 #include <dcmtk/dcmimage/diregist.h>
 #include <dcmtk/dcmdata/dccodec.h>
@@ -16,47 +16,40 @@
 #include "slideio/core/tools/tools.hpp"
 
 using namespace slideio;
+namespace fs = std::filesystem;
 
 static const std::string filePathPattern = "*.dcm";
 static const std::string ID("DCM");
 
-DCMImageDriver::DCMImageDriver()
-{
+DCMImageDriver::DCMImageDriver() {
     initializeDCMTK();
 }
 
-DCMImageDriver::~DCMImageDriver()
-{
+DCMImageDriver::~DCMImageDriver() {
     clieanUpDCMTK();
 }
 
-
-std::string DCMImageDriver::getID() const
-{
-	return ID;
+std::string DCMImageDriver::getID() const {
+    return ID;
 }
 
-std::shared_ptr<CVSlide> DCMImageDriver::openFile(const std::string& filePath)
-{
+std::shared_ptr<CVSlide> DCMImageDriver::openFile(const std::string& filePath) {
     Tools::throwIfPathNotExist(filePath, "DCMImageDriver::openFile");
     std::shared_ptr<CVSlide> ptr(new DCMSlide(filePath));
     return ptr;
 }
 
-std::string DCMImageDriver::getFileSpecs() const
-{
-	return filePathPattern;
+std::string DCMImageDriver::getFileSpecs() const {
+    return filePathPattern;
 }
 
-void DCMImageDriver::initializeDCMTK()
-{
+void DCMImageDriver::initializeDCMTK() {
     DcmRLEDecoderRegistration::registerCodecs();
     DJDecoderRegistration::registerCodecs();
     DJLSDecoderRegistration::registerCodecs();
 }
 
-void DCMImageDriver::clieanUpDCMTK()
-{
+void DCMImageDriver::clieanUpDCMTK() {
 #ifndef __GNUC__
     DcmRLEDecoderRegistration::cleanup();
     DJDecoderRegistration::cleanup();
@@ -64,16 +57,15 @@ void DCMImageDriver::clieanUpDCMTK()
 #endif
 }
 
-bool DCMImageDriver::canOpenFile(const std::string& filePath) const
-{
+bool DCMImageDriver::canOpenFile(const std::string& filePath) const {
     bool can = ImageDriver::canOpenFile(filePath);
-    if(!can) {
+    if (!can) {
 #if defined(WIN32)
-        boost::filesystem::path fp(Tools::toWstring(filePath));
+        fs::path fp(Tools::toWstring(filePath));
         std::wstring extension = fp.extension().wstring();
         can = extension.empty();
 #else
-        boost::filesystem::path fp(filePath);
+        fs::path fp(filePath);
         std::string extension = fp.extension().string();
         can = extension.empty();
 #endif

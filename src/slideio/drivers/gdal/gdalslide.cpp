@@ -3,7 +3,7 @@
 // of this distribution and at http://slideio.com/license.html.
 #include "slideio/drivers/gdal/gdalslide.hpp"
 #include "slideio/drivers/gdal/gdalscene.hpp"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 
 slideio::GDALSlide::GDALSlide(GDALDatasetH ds, const std::string& filePath)

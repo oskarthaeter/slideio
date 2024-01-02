@@ -5,7 +5,7 @@
 #include "slideio/slideio/slideio.hpp"
 #include "slideio/core/cvstructs.hpp"
 #include "slideio/imagetools/cvtools.hpp"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <boost/format.hpp>
 
 #include "slideio/core/tools/tools.hpp"

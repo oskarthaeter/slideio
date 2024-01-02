@@ -5,7 +5,7 @@
 #include "slideio/imagetools/imagetools.hpp"
 #include "slideio/core/tools/xmltools.hpp"
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <boost/format.hpp>
 #include "slideio/imagetools/libtiff.hpp"
 #include "slideio/drivers/svs/svssmallscene.hpp"

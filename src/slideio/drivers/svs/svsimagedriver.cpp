@@ -3,7 +3,7 @@
 // of this distribution and at http://slideio.com/license.html.
 #include "slideio/drivers/svs/svsimagedriver.hpp"
 #include "slideio/drivers/svs/svsslide.hpp"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include "slideio/base/log.hpp"
 
 slideio::SVSImageDriver::SVSImageDriver()

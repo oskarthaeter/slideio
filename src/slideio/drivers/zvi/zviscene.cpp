@@ -4,7 +4,7 @@
 #include "slideio/drivers/zvi/zviscene.hpp"
 #include "slideio/drivers/zvi/zvislide.hpp"
 #include "slideio/drivers/zvi/zvitags.hpp"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <boost/format.hpp>
 #include <boost/variant.hpp>
 

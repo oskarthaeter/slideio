@@ -3,7 +3,7 @@
 // of this distribution and at http://slideio.com/license.html.
 #include "slideio/drivers/afi/afiimagedriver.hpp"
 #include "slideio/drivers/afi/afislide.hpp"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 
 slideio::AFIImageDriver::AFIImageDriver()

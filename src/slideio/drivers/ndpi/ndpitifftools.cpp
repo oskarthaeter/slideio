@@ -7,7 +7,7 @@
 #include <setjmp.h>
 #include <opencv2/core.hpp>
 #include <boost/format.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <jxrcodec/jxrcodec.hpp>
 
 #include "slideio/core/tools/tools.hpp"

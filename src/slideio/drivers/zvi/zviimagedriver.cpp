@@ -3,7 +3,7 @@
 // of this distribution and at http://slideio.com/license.html.
 #include "slideio/drivers/zvi/zviimagedriver.hpp"
 #include "slideio/drivers/zvi/zvislide.hpp"
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include "slideio/core/tools/tools.hpp"
 

@@ -10,10 +10,12 @@
 
 #include <openjpeg.h>
 #include <boost/format.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <fstream>
 
 #include "single_tests/jp2k/jp2_memory.hpp"
+
+namespace fs = std::filesystem;
 
 /* opj_* Helper code from https://groups.google.com/forum/#!topic/openjpeg/8cebr0u7JgY */
 
@@ -30,7 +32,7 @@ static void openjpeg_info(const char* msg, void* client_data) {
 }
 
 void slideio::ImageTools::readJp2KFile(const std::string& filePath, cv::OutputArray output) {
-    auto fileSize = boost::filesystem::file_size(filePath);
+    auto fileSize = fs::file_size(filePath);
     if (fileSize <= 0)
         throw std::runtime_error(
             (boost::format("Invalid file: %1%") % filePath).str());

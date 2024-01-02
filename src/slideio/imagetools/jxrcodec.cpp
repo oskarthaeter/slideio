@@ -3,7 +3,7 @@
 // of this distribution and at http://slideio.com/license.html.
 #include "slideio/imagetools/imagetools.hpp"
 #include <boost/format.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #if !defined(WIN32)
 #define INITGUID
 #endif
@@ -60,7 +60,7 @@ static int getCvType(jpegxr_image_info& info)
 
 void slideio::ImageTools::readJxrImage(const std::string& path, cv::OutputArray output)
 {
-    namespace fs = boost::filesystem;
+    namespace fs = std::filesystem;
     if (!fs::exists(path))
     {
         throw std::runtime_error(

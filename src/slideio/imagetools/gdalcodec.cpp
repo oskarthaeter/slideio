@@ -4,7 +4,7 @@
 #include "slideio/imagetools/imagetools.hpp"
 #include "slideio/imagetools/cvtools.hpp"
 #include <boost/format.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include "slideio/imagetools/gdal_lib.hpp"
 
 

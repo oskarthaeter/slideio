@@ -6,7 +6,7 @@
 #include "slideio/drivers/czi/czistructs.hpp"
 #include "slideio/core/tools/xmltools.hpp"
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <boost/format.hpp>
 #include <tinyxml2.h>
 #include <set>
