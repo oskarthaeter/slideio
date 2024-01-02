@@ -2,7 +2,9 @@ add_subdirectory(gdal)
 add_subdirectory(svs)
 add_subdirectory(afi)
 add_subdirectory(czi)
-add_subdirectory(dcm)
+
+# add_subdirectory(dcm)
 add_subdirectory(scn)
-add_subdirectory(zvi)
+
+# add_subdirectory(zvi)
 add_subdirectory(ndpi)

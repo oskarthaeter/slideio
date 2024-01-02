@@ -17,31 +17,24 @@
 
 /* opj_* Helper code from https://groups.google.com/forum/#!topic/openjpeg/8cebr0u7JgY */
 
-
-static void openjpeg_warning(const char* msg, void* client_data)
-{
+static void openjpeg_warning(const char* msg, void* client_data) {
     SLIDEIO_LOG(WARNING) << msg;
 }
 
-static void openjpeg_error(const char* msg, void* client_data)
-{
+static void openjpeg_error(const char* msg, void* client_data) {
     RAISE_RUNTIME_ERROR << msg;
 }
 
-static void openjpeg_info(const char* msg, void* client_data)
-{
+static void openjpeg_info(const char* msg, void* client_data) {
     SLIDEIO_LOG(INFO) << msg;
 }
 
-
-
-void slideio::ImageTools::readJp2KFile(const std::string& filePath, cv::OutputArray output)
-{
+void slideio::ImageTools::readJp2KFile(const std::string& filePath, cv::OutputArray output) {
     auto fileSize = boost::filesystem::file_size(filePath);
-    if(fileSize<=0)
+    if (fileSize <= 0)
         throw std::runtime_error(
             (boost::format("Invalid file: %1%") % filePath).str());
-    
+
     std::ifstream file(filePath, std::ios::binary);
     // Stop eating new lines in binary mode!!!
     file.unsetf(std::ios::skipws);
@@ -50,45 +43,39 @@ void slideio::ImageTools::readJp2KFile(const std::string& filePath, cv::OutputAr
     vec.reserve(fileSize);
     // read the data:
     vec.insert(vec.begin(),
-        std::istream_iterator<uint8_t>(file),
-        std::istream_iterator<uint8_t>());
+               std::istream_iterator<uint8_t>(file),
+               std::istream_iterator<uint8_t>());
     decodeJp2KStream(vec, output);
 }
 
-static int getComponentDataType(const opj_image_comp_t* comp)
-{
-    switch(comp->prec)
-    {
-    case 8:
-        return ((comp->sgnd)?CV_8S:CV_8U);
-    case 16:
-        return ((comp->sgnd)?CV_16S:CV_16U);
-    case 32:
-        return CV_32S;
+static int getComponentDataType(const opj_image_comp_t* comp) {
+    switch (comp->prec) {
+        case 8:
+            return ((comp->sgnd) ? CV_8S : CV_8U);
+        case 16:
+            return ((comp->sgnd) ? CV_16S : CV_16U);
+        case 32:
+            return CV_32S;
     }
     throw std::runtime_error(
         (boost::format("Unknown data type of data: %1%") % (int)comp->bpp).str());
 }
 
-static OPJ_CODEC_FORMAT getJP2KCodec(const std::vector<uint8_t>& data)
-{
+static OPJ_CODEC_FORMAT getJP2KCodec(const std::vector<uint8_t>& data) {
     static const unsigned char jpc_header[] = {0xff, 0x4f};
     static const unsigned char jp2_box_jp[] = {0x6a, 0x50, 0x20, 0x20}; /* 'jP  ' */
 
-    const uint8_t *buf = data.data();
+    const uint8_t* buf = data.data();
     size_t len = data.size();
 
     OPJ_CODEC_FORMAT eCodecFormat;
     if (len >= sizeof(jpc_header) &&
-            memcmp(buf, jpc_header, sizeof(jpc_header)) == 0) {
+        memcmp(buf, jpc_header, sizeof(jpc_header)) == 0) {
         eCodecFormat = OPJ_CODEC_J2K;
-    }
-    else if (len >= 4 + sizeof(jp2_box_jp) &&
+    } else if (len >= 4 + sizeof(jp2_box_jp) &&
                memcmp(buf + 4, jp2_box_jp, sizeof(jp2_box_jp)) == 0) {
         eCodecFormat = OPJ_CODEC_JP2;
-    }
-    else
-    {
+    } else {
         throw std::runtime_error("Unknown file format");
     }
     return eCodecFormat;
@@ -98,37 +85,35 @@ void slideio::ImageTools::decodeJp2KStream(
     const std::vector<uint8_t>& data,
     cv::OutputArray output,
     const std::vector<int>& channelIndices,
-    bool forceYUV)
-{
+    bool forceYUV) {
     opj_codec_t* codec(nullptr);
     opj_image_t* image(nullptr);
     opj_stream_t* stream(nullptr);
-    try
-    {
+    try {
         OPJ_CODEC_FORMAT codecId = getJP2KCodec(data);
         OPJStreamUserData userData((uint8_t*)data.data(), data.size());
         stream = createOPJMemoryStream(&userData, data.size(), true);
         codec = opj_create_decompress(codecId);
-        if(!codec)
+        if (!codec)
             throw std::runtime_error("Cannot get required codec");
         opj_dparameters_t jp2dParams;
         opj_set_default_decoder_parameters(&jp2dParams);
-        if (!opj_setup_decoder(codec, &jp2dParams)){
+        if (!opj_setup_decoder(codec, &jp2dParams)) {
             throw std::runtime_error("Cannot setup codec");
         }
-        if(!opj_read_header(stream, codec, &image) || (image->numcomps == 0)){
+        if (!opj_read_header(stream, codec, &image) || (image->numcomps == 0)) {
             throw std::runtime_error("Error reading image header");
         }
-        if(forceYUV)
+        if (forceYUV)
             image->color_space = OPJ_CLRSPC_SYCC;
         // decode the image
         OPJ_BOOL ret = opj_decode(codec, stream, image);
-        if(!ret)
+        if (!ret)
             throw std::runtime_error("Error by decoding of Jp2K stream");
 
-        opj_end_decompress(codec,stream);
+        opj_end_decompress(codec, stream);
         opj_destroy_codec(codec);
-        codec=nullptr;
+        codec = nullptr;
         opj_stream_destroy(stream);
         stream = nullptr;
 
@@ -137,83 +122,66 @@ void slideio::ImageTools::decodeJp2KStream(
         const OPJ_UINT32 numComps = image->numcomps;
         const int dt = getComponentDataType(image->comps);
 
-        output.create(imageHeight, imageWidth,CV_MAKETYPE(dt, image->numcomps));
-        const cv::Size imageSize(imageWidth, imageHeight); 
+        output.create(imageHeight, imageWidth, CV_MAKETYPE(dt, image->numcomps));
+        const cv::Size imageSize(imageWidth, imageHeight);
 
         std::vector<cv::Mat> imagePlanes;
         std::vector<int> channels(channelIndices);
 
-        for(OPJ_UINT32 channel=0; channel<numComps; channel++)
-        {
+        for (OPJ_UINT32 channel = 0; channel < numComps; channel++) {
             const opj_image_comp& component = image->comps[channel];
-            // create a cv::Mat object with the buffer 
+            // create a cv::Mat object with the buffer
             cv::Mat compRaster32S(component.h, component.w, CV_MAKETYPE(CV_32S, 1), component.data);
             // convert raster from 32 bit integer to the original type
             cv::Mat compRaster;
-            compRaster32S.convertTo(compRaster, CV_MAKETYPE(dt,1));
+            compRaster32S.convertTo(compRaster, CV_MAKETYPE(dt, 1));
             // check if we need to resize the component
-            if(component.w!=imageWidth || component.h!=imageHeight)
-            {
+            if (component.w != imageWidth || component.h != imageHeight) {
                 // resize the component so it fits to the image size
                 cv::Mat resized(imageSize.height, imageSize.width, CV_MAKETYPE(dt, 1));
                 cv::resize(compRaster, resized, imageSize);
                 imagePlanes.push_back(resized);
-            }
-            else
-            {
+            } else {
                 imagePlanes.push_back(compRaster);
             }
         }
         cv::Mat targetImage;
-        if(forceYUV)
-        {
+        if (forceYUV) {
             cv::Mat cvImage;
             cv::merge(imagePlanes, cvImage);
             cv::cvtColor(cvImage, targetImage, cv::COLOR_YUV2RGB);
-        }
-        else
-        {
+        } else {
             cv::merge(imagePlanes, targetImage);
         }
-        if(channels.empty())
-        {
+        if (channels.empty()) {
             // if no channel is defined - return all channels
             targetImage.copyTo(output);
-        }
-        else
-        {
+        } else {
             std::vector<cv::Mat> targetChannels;
-            for(const int& channel : channels)
-            {
+            for (const int& channel : channels) {
                 cv::Mat channelRaster;
-                cv::extractChannel(targetImage,channelRaster, channel);
+                cv::extractChannel(targetImage, channelRaster, channel);
                 targetChannels.push_back(channelRaster);
             }
-            if(targetChannels.size()==1)
-            {
+            if (targetChannels.size() == 1) {
                 targetChannels[0].copyTo(output);
-            }
-            else
-            {
+            } else {
                 cv::merge(targetChannels, output);
             }
         }
         opj_image_destroy(image);
-    }
-    catch(std::exception& ex)
-    {
-        if(codec)
+    } catch (std::exception& ex) {
+        if (codec)
             opj_destroy_codec(codec);
-        if(image)
+        if (image)
             opj_image_destroy(image);
-        if(stream)
+        if (stream)
             opj_stream_destroy(stream);
         throw ex;
     }
 }
 
-void rasterToOPJImage(const cv::Mat& mat, ImagePtr& image, const slideio::JP2KEncodeParameters& params)
-{
+void rasterToOPJImage(const cv::Mat& mat, ImagePtr& image, const slideio::JP2KEncodeParameters& params) {
     const int numChannels = mat.channels();
     std::vector<opj_image_cmptparm_t> channelParameters(numChannels);
     const int type = mat.type();
@@ -224,10 +192,10 @@ void rasterToOPJImage(const cv::Mat& mat, ImagePtr& image, const slideio::JP2KEn
     int sign = 0;
 
     switch (depth) {
-    case CV_8S:
-    case CV_16S:
-    case CV_32S:
-        sign = 1;
+        case CV_8S:
+        case CV_16S:
+        case CV_32S:
+            sign = 1;
     }
 
     for (auto& parameter : channelParameters) {
@@ -243,17 +211,15 @@ void rasterToOPJImage(const cv::Mat& mat, ImagePtr& image, const slideio::JP2KEn
     COLOR_SPACE colorSpace = OPJ_CLRSPC_UNKNOWN;
     if (numChannels == 1) {
         colorSpace = OPJ_CLRSPC_GRAY;
-    }
-    else if (numChannels == 3) {
+    } else if (numChannels == 3) {
         colorSpace = OPJ_CLRSPC_SRGB;
     }
 
     image = opj_image_create(numChannels, channelParameters.data(),
-        colorSpace);
+                             colorSpace);
     image.get()->x1 = width;
     image.get()->y1 = height;
     image.get()->numcomps = numChannels;
-
 
     uint8_t* data = mat.data;
     std::vector<int32_t*> channelData(numChannels);
@@ -262,35 +228,34 @@ void rasterToOPJImage(const cv::Mat& mat, ImagePtr& image, const slideio::JP2KEn
     }
 
     switch (depth) {
-    case CV_8U:
-        slideio::ImageTools::convertTo32bitChannels(data, mat.cols,
-            mat.rows, numChannels, channelData.data());
-        break;
-    case CV_8S:
-        slideio::ImageTools::convertTo32bitChannels(reinterpret_cast<int8_t*>(data), mat.cols,
-            mat.rows, numChannels, channelData.data());
-        break;
-    case CV_16U:
-        slideio::ImageTools::convertTo32bitChannels(reinterpret_cast<uint16_t*>(data), mat.cols,
-            mat.rows, numChannels, channelData.data());
-        break;
-    case CV_16S:
-        slideio::ImageTools::convertTo32bitChannels(reinterpret_cast<int16_t*>(data), mat.cols,
-            mat.rows, numChannels, channelData.data());
-        break;
-    case CV_32S:
-        slideio::ImageTools::convertTo32bitChannels(reinterpret_cast<int32_t*>(data), mat.cols,
-            mat.rows, numChannels, channelData.data());
-        break;
-    default:
-        RAISE_RUNTIME_ERROR << "Unsupported type for Jpeg2000 conversion: " << depth;
+        case CV_8U:
+            slideio::ImageTools::convertTo32bitChannels(data, mat.cols,
+                                                        mat.rows, numChannels, channelData.data());
+            break;
+        case CV_8S:
+            slideio::ImageTools::convertTo32bitChannels(reinterpret_cast<int8_t*>(data), mat.cols,
+                                                        mat.rows, numChannels, channelData.data());
+            break;
+        case CV_16U:
+            slideio::ImageTools::convertTo32bitChannels(reinterpret_cast<uint16_t*>(data), mat.cols,
+                                                        mat.rows, numChannels, channelData.data());
+            break;
+        case CV_16S:
+            slideio::ImageTools::convertTo32bitChannels(reinterpret_cast<int16_t*>(data), mat.cols,
+                                                        mat.rows, numChannels, channelData.data());
+            break;
+        case CV_32S:
+            slideio::ImageTools::convertTo32bitChannels(reinterpret_cast<int32_t*>(data), mat.cols,
+                                                        mat.rows, numChannels, channelData.data());
+            break;
+        default:
+            RAISE_RUNTIME_ERROR << "Unsupported type for Jpeg2000 conversion: " << depth;
     }
 }
 
 int slideio::ImageTools::encodeJp2KStream(const cv::Mat& mat, uint8_t* buffer, int bufferSize,
-    const JP2KEncodeParameters& jp2Params)
-{
-    wopj_cparameters parameters;   /* compression parameters */
+                                          const JP2KEncodeParameters& jp2Params) {
+    wopj_cparameters parameters; /* compression parameters */
     ImagePtr image;
 
     opj_set_default_encoder_parameters(&parameters);
@@ -298,9 +263,9 @@ int slideio::ImageTools::encodeJp2KStream(const cv::Mat& mat, uint8_t* buffer, i
     parameters.cod_format = jp2Params.getCodecFormat();
     parameters.tcp_mct = 0;
 
-    parameters.tcp_numlayers = 1; // set number of quality layers
+    parameters.tcp_numlayers = 1;  // set number of quality layers
     parameters.tcp_rates[0] = jp2Params.getCompressionRate();
-    OPJ_CODEC_FORMAT codecFormat = 
+    OPJ_CODEC_FORMAT codecFormat =
         (jp2Params.getCodecFormat() == JP2KEncodeParameters::Codec::J2KFile ? OPJ_CODEC_JP2 : OPJ_CODEC_J2K);
     CodecPtr codec = opj_create_compress(codecFormat);
 
@@ -340,7 +305,6 @@ int slideio::ImageTools::encodeJp2KStream(const cv::Mat& mat, uint8_t* buffer, i
     opj_stream_destroy(strm);
     return (int)stream.offset;
 }
-
 
 // std::vector<unsigned char> encodeJp2000(const cv::Mat& input, int quality)
 // {
